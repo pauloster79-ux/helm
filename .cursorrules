@@ -1,0 +1,196 @@
+# Helm Project - Cursor AI Rules
+
+## Project Context
+You are working on Helm, an AI-powered project management platform. This is the MVP build using:
+- Frontend: React 18 + TypeScript + Vite + Tailwind CSS
+- Backend: NestJS (custom API for AI operations only)
+- Database: Supabase (managed PostgreSQL with built-in auth)
+- AI Service: FastAPI + Python (OpenAI integration)
+- Auth: Supabase OAuth (Google, Microsoft)
+
+## Current Phase: Phase 1 - Foundation & Authentication
+Building the authentication system and basic frontend shell with:
+- Supabase setup and configuration
+- OAuth integration (Google, Microsoft)
+- Basic UI shell with navigation
+- Protected routes and auth context
+
+## Architecture Principles
+
+### Supabase-First Approach
+- **No custom backend for CRUD operations** - Use Supabase client directly from frontend
+- Supabase handles: Auth, Database, Row-Level Security (RLS), Real-time subscriptions
+- NestJS backend ONLY for: AI operations, complex business logic, third-party integrations
+- FastAPI service ONLY for: OpenAI API calls, AI prompt engineering
+
+### Data Flow
+1. Frontend → Supabase Client → Supabase Database (for CRUD)
+2. Frontend → NestJS API → FastAPI → OpenAI (for AI features)
+3. Frontend subscribes to Supabase real-time changes
+
+### Security
+- All database access controlled by Supabase RLS policies
+- Frontend uses service role key NEVER (only anon key)
+- Backend uses service role key for admin operations only
+- JWT tokens managed by Supabase Auth
+
+## Code Conventions
+
+### TypeScript
+- Use strict mode
+- Prefer interfaces over types for object shapes
+- Use type inference where possible
+- No `any` types - use `unknown` if type is truly unknown
+
+### React
+- Functional components only
+- Use hooks (useState, useEffect, useCallback, useMemo)
+- Custom hooks for reusable logic (prefix with `use`)
+- Keep components small and focused (< 200 lines)
+
+### File Naming
+- Components: PascalCase (e.g., `UserProfile.tsx`)
+- Hooks: camelCase with `use` prefix (e.g., `useAuth.ts`)
+- Utilities: camelCase (e.g., `formatDate.ts`)
+- Constants: UPPER_SNAKE_CASE (e.g., `API_ENDPOINTS.ts`)
+
+### Imports Order
+1. React and third-party libraries
+2. Internal utilities and hooks
+3. Components
+4. Types
+5. Styles
+
+### Error Handling
+- Always handle loading and error states in components
+- Use try-catch for async operations
+- Show user-friendly error messages
+- Log errors to console in development
+
+### Styling
+- Use Tailwind CSS utility classes
+- Extract complex styles to components
+- Use CSS variables for theme colors (defined in index.css)
+- Mobile-first responsive design
+
+## File Structure
+
+```
+helm/
+├── frontend/
+│   ├── src/
+│   │   ├── components/        # Reusable UI components
+│   │   │   ├── auth/          # Auth-related components
+│   │   │   ├── common/        # Common components (Button, Input, etc.)
+│   │   │   └── layout/        # Layout components (Header, Sidebar)
+│   │   ├── pages/             # Page components (route views)
+│   │   ├── hooks/             # Custom React hooks
+│   │   ├── lib/               # External service clients
+│   │   │   └── supabase/      # Supabase client and helpers
+│   │   ├── contexts/          # React contexts
+│   │   ├── types/             # TypeScript type definitions
+│   │   ├── utils/             # Utility functions
+│   │   ├── constants/         # Constants and config
+│   │   ├── App.tsx
+│   │   ├── main.tsx
+│   │   └── index.css
+│   ├── public/
+│   ├── package.json
+│   ├── vite.config.ts
+│   ├── tailwind.config.js
+│   └── tsconfig.json
+├── backend/                    # NestJS (AI operations only)
+│   └── [Future implementation]
+├── ai-service/                 # FastAPI (OpenAI integration)
+│   └── [Future implementation]
+├── docs/
+│   ├── product/               # Product specs and requirements
+│   └── architecture/          # Architecture decisions and diagrams
+├── .gitignore
+├── README.md
+└── .cursorrules
+```
+
+## MVP Scope - Phase 1
+
+### In Scope
+- ✅ Supabase project setup with auth enabled
+- ✅ OAuth login (Google, Microsoft)
+- ✅ Basic frontend shell with routing
+- ✅ Auth context and protected routes
+- ✅ Simple dashboard landing page
+- ✅ User profile display
+
+### Out of Scope (Future Phases)
+- ❌ AI features
+- ❌ Project management features
+- ❌ Real-time collaboration
+- ❌ Advanced UI/UX
+- ❌ Mobile app
+
+## Development Workflow
+
+### Phase 1 Steps
+1. Set up Supabase project and configure OAuth
+2. Initialize React + Vite + TypeScript project
+3. Install dependencies (Supabase JS, React Router, Tailwind)
+4. Create Supabase client and auth helpers
+5. Build auth context and hooks
+6. Create login page with OAuth buttons
+7. Build basic layout with protected routes
+8. Create simple dashboard page
+9. Test auth flow end-to-end
+
+### Testing Approach
+- Manual testing for MVP
+- Test all auth flows (login, logout, protected routes)
+- Test on different browsers
+- Verify RLS policies in Supabase dashboard
+
+## Cursor AI Guidelines
+
+### When Writing Code
+- Ask clarifying questions if requirements are unclear
+- Suggest best practices and potential issues
+- Write clean, documented code
+- Follow the file structure above
+- Use TypeScript strictly
+
+### When Debugging
+- Check console for errors first
+- Verify Supabase configuration
+- Check RLS policies if database access fails
+- Verify environment variables are set
+
+### When Suggesting Features
+- Remind me if feature is out of MVP scope
+- Suggest simplest implementation first
+- Consider Supabase-first approach
+- Think about security implications
+
+## Common Patterns
+
+### Supabase Auth Hook
+```typescript
+const { user, loading } = useAuth();
+```
+
+### Protected Route
+```typescript
+if (loading) return <LoadingSpinner />;
+if (!user) return <Navigate to="/login" />;
+return <ProtectedContent />;
+```
+
+### Supabase Query
+```typescript
+const { data, error } = await supabase
+  .from('table')
+  .select('*')
+  .eq('user_id', user.id);
+```
+
+## Environment Variables
+- `VITE_SUPABASE_URL`: Supabase project URL
+- `VITE_SUPABASE_ANON_KEY`: Supabase anonymous key (safe for frontend)
+- Never commit `.env` files to git

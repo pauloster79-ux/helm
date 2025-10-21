@@ -1,0 +1,75 @@
+╔═══════════════════════════════════════════════════════════════════╗
+║                  HOW TO FIX THE PROGRESS BAR                      ║
+╚═══════════════════════════════════════════════════════════════════╝
+
+STEP 1: Go to Supabase
+├─ Open your browser
+├─ Go to: https://supabase.com
+├─ Sign in
+└─ Click on your "Helm" project
+
+STEP 2: Open SQL Editor
+├─ Look at the LEFT SIDEBAR
+├─ Find and click: "SQL Editor" 
+└─ Click: "+ New query" button (top right)
+
+STEP 3: Copy & Paste SQL
+├─ Open this file: docs/architecture/FIX_PROGRESS_BAR.sql
+├─ Copy EVERYTHING in that file
+├─ Paste into the SQL Editor
+└─ Click "RUN" button (or press Ctrl+Enter)
+
+STEP 4: Verify Success
+├─ You should see: "Success. No rows returned" 
+│  OR a table showing task statistics
+└─ This means it worked! ✅
+
+STEP 5: Test in Your App
+├─ Go back to your Helm app
+├─ Press F5 to refresh
+├─ Open any task
+└─ The progress bar should now work! 🎉
+
+═══════════════════════════════════════════════════════════════════
+
+VISUAL LOCATION IN SUPABASE:
+
+  Supabase Dashboard
+  ├── Home
+  ├── Table Editor
+  ├── SQL Editor  ← ← ← CLICK HERE!
+  ├── Database
+  ├── Authentication
+  └── Storage
+
+═══════════════════════════════════════════════════════════════════
+
+SQL TO RUN (you can copy from here too):
+
+ALTER TABLE tasks 
+ADD COLUMN IF NOT EXISTS progress_percentage INTEGER DEFAULT 0 
+CHECK (progress_percentage >= 0 AND progress_percentage <= 100);
+
+CREATE INDEX IF NOT EXISTS tasks_progress_percentage_idx 
+ON tasks(progress_percentage);
+
+═══════════════════════════════════════════════════════════════════
+
+WHAT THIS DOES:
+✅ Adds the missing "progress_percentage" field to your tasks table
+✅ Makes sure values are between 0 and 100
+✅ Creates an index for faster queries
+✅ Enables the progress bar to work!
+
+═══════════════════════════════════════════════════════════════════
+
+NEED MORE HELP?
+📖 Read: PROGRESS_BAR_FIX_INSTRUCTIONS.md (detailed guide)
+⚡ Quick: frontend/PROGRESS_BAR_QUICK_FIX.md (3 steps)
+📊 Check: docs/architecture/VERIFY_PROGRESS_FIELD.sql (verify it worked)
+
+═══════════════════════════════════════════════════════════════════
+
+
+
+

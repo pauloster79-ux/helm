@@ -1,0 +1,1299 @@
+info:
+  title: Helm API
+  version: 1.0.0
+  description: |
+    REST API for Helm - AI-powered project management platform.
+    
+    ## Authentication
+    All endpoints (except /auth/*) require Bearer token authentication.
+    Include token in Authorization header: `Authorization: Bearer <token>`
+    
+    ## Rate Limiting
+    - 100 requests per minute per user
+    - 1000 requests per hour per organization
+    
+    ## Pagination
+    List endpoints support pagination via query parameters:
+    - `page` (default: 1)
+    - `limit` (default: 50, max: 100)
+    
+    Response includes pagination metadata in headers:
+    - `X-Total-Count`: Total number of items
+    - `X-Page`: Current page
+    - `X-Per-Page`: Items per page
+    
+  contact:
+    name: Helm API Support
+    email: api@helm.app
+
+servers:
+  - url: https://api.helm.app/v1
+    description: Production
+  - url: https://staging-api.helm.app/v1
+    description: Staging
+  - url: http://localhost:3000/v1
+    description: Local development
+
+tags:
+  - name: Authentication
+    description: User authentication and authorization
+  - name: Projects
+    description: Project management
+  - name: Tasks
+    description: Task operations
+  - name: Risks
+    description: Risk management
+  - name: Decisions
+    description: Decision tracking
+  - name: Milestones
+    description: Milestone management
+  - name: Blockers
+    description: Blocker management
+  - name: Resources
+    description: Resource management
+  - name: Stakeholders
+    description: Stakeholder management
+  - name: Documents
+    description: Document management
+  - name: Comments
+    description: Comments and discussions
+  - name: Proposals
+    description: AI proposal management
+  - name: AI
+    description: AI configuration and operations
+  - name: Reports
+    description: Report generation
+
+security:
+  - bearerAuth: []
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    Error:
+      type: object
+      required:
+        - error
+        - message
+      properties:
+        error:
+          type: string
+          example: "validation_error"
+        message:
+          type: string
+          example: "Task title is required"
+        details:
+          type: object
+          additionalProperties: true
+
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 50
+        total:
+          type: integer
+          example: 234
+
+    # Core Entities
+
+    User:
+      type: object
+      required:
+        - id
+        - email
+        - name
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        name:
+          type: string
+        avatar_url:
+          type: string
+          format: uri
+        preferences:
+          type: object
+
+    Project:
+      type: object
+      required:
+        - id
+        - name
+        - status
+      properties:
+        id:
+          type: string
+          format: uuid
+        organization_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          maxLength: 200
+        description:
+          type: string
+        status:
+          type: string
+          enum: [active, archived, deleted]
+        start_date:
+          type: string
+          format: date
+        end_date:
+          type: string
+          format: date
+        settings:
+          type: object
+        created_by:
+          type: string
+          format: uuid
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    CreateProjectRequest:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          minLength: 3
+          maxLength: 200
+        description:
+          type: string
+        start_date:
+          type: string
+          format: date
+        end_date:
+          type: string
+          format: date
+        settings:
+          type: object
+
+    Task:
+      type: object
+      required:
+        - id
+        - project_id
+        - title
+        - description
+        - status
+      properties:
+        id:
+          type: string
+          format: uuid
+        project_id:
+          type: string
+          format: uuid
+        parent_task_id:
+          type: string
+          format: uuid
+          nullable: true
+        title:
+          type: string
+          maxLength: 200
+        description:
+          type: string
+        acceptance_criteria:
+          type: array
+          items:
+            type: string
+        status:
+          type: string
+          enum: [todo, in_progress, review, done]
+        progress_percentage:
+          type: integer
+          minimum: 0
+          maximum: 100
+        owner_id:
+          type: string
+          format: uuid
+          nullable: true
+        start_date:
+          type: string
+          format: date
+          nullable: true
+        end_date:
+          type: string
+          format: date
+          nullable: true
+        latest_position:
+          type: array
+          items:
+            type: object
+            properties:
+              timestamp:
+                type: string
+                format: date-time
+              user_id:
+                type: string
+                format: uuid
+              content:
+                type: string
+        tags:
+          type: array
+          items:
+            type: string
+        created_by:
+          type: string
+          format: uuid
+        created_at:
+          type: string
+          format: date-time
+        updated_by:
+          type: string
+          format: uuid
+        updated_at:
+          type: string
+          format: date-time
+
+    CreateTaskRequest:
+      type: object
+      required:
+        - title
+        - description
+      properties:
+        title:
+          type: string
+          minLength: 3
+          maxLength: 200
+        description:
+          type: string
+          minLength: 10
+        acceptance_criteria:
+          type: array
+          items:
+            type: string
+        owner_id:
+          type: string
+          format: uuid
+        parent_task_id:
+          type: string
+          format: uuid
+        tags:
+          type: array
+          items:
+            type: string
+
+    UpdateTaskRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 3
+          maxLength: 200
+        description:
+          type: string
+          minLength: 10
+        acceptance_criteria:
+          type: array
+          items:
+            type: string
+        status:
+          type: string
+          enum: [todo, in_progress, review, done]
+        progress_percentage:
+          type: integer
+          minimum: 0
+          maximum: 100
+        owner_id:
+          type: string
+          format: uuid
+        tags:
+          type: array
+          items:
+            type: string
+
+    AddLatestPositionRequest:
+      type: object
+      required:
+        - content
+      properties:
+        content:
+          type: string
+          minLength: 10
+
+    Risk:
+      type: object
+      required:
+        - id
+        - project_id
+        - trigger_condition
+        - impact_description
+        - probability
+        - impact
+        - status
+      properties:
+        id:
+          type: string
+          format: uuid
+        project_id:
+          type: string
+          format: uuid
+        trigger_condition:
+          type: string
+          description: "IF clause"
+        impact_description:
+          type: string
+          description: "THEN clause"
+        probability:
+          type: string
+          enum: [low, medium, high]
+        impact:
+          type: string
+          enum: [minor, moderate, severe, critical]
+        mitigation_strategy:
+          type: string
+        owner_id:
+          type: string
+          format: uuid
+        review_date:
+          type: string
+          format: date
+        status:
+          type: string
+          enum: [active, mitigated, materialized, closed]
+        category:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+        created_by:
+          type: string
+          format: uuid
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    CreateRiskRequest:
+      type: object
+      required:
+        - trigger_condition
+        - impact_description
+        - probability
+        - impact
+      properties:
+        trigger_condition:
+          type: string
+          minLength: 10
+        impact_description:
+          type: string
+          minLength: 10
+        probability:
+          type: string
+          enum: [low, medium, high]
+        impact:
+          type: string
+          enum: [minor, moderate, severe, critical]
+        mitigation_strategy:
+          type: string
+        owner_id:
+          type: string
+          format: uuid
+        category:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+
+    Decision:
+      type: object
+      required:
+        - id
+        - project_id
+        - question
+        - options
+        - status
+      properties:
+        id:
+          type: string
+          format: uuid
+        project_id:
+          type: string
+          format: uuid
+        question:
+          type: string
+        context:
+          type: string
+        options:
+          type: array
+          items:
+            type: object
+            properties:
+              option:
+                type: string
+              pros:
+                type: array
+                items:
+                  type: string
+              cons:
+                type: array
+                items:
+                  type: string
+              cost_estimate:
+                type: string
+        selected_option:
+          type: string
+        rationale:
+          type: string
+        decision_maker_id:
+          type: string
+          format: uuid
+        decision_date:
+          type: string
+          format: date
+        impact_assessment:
+          type: string
+        status:
+          type: string
+          enum: [pending, decided, implemented, reversed]
+        required_by_date:
+          type: string
+          format: date
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    Proposal:
+      type: object
+      required:
+        - id
+        - project_id
+        - proposal_type
+        - component_type
+        - changes
+        - rationale
+        - confidence
+        - status
+      properties:
+        id:
+          type: string
+          format: uuid
+        project_id:
+          type: string
+          format: uuid
+        proposal_type:
+          type: string
+          enum: 
+            - field_improvement
+            - component_creation
+            - relationship
+            - document_based
+            - stakeholder_communication
+        component_type:
+          type: string
+          enum: [task, risk, decision, milestone, blocker, document, stakeholder]
+        component_id:
+          type: string
+          format: uuid
+          nullable: true
+        changes:
+          type: object
+          description: "Structure varies by proposal_type"
+        rationale:
+          type: string
+        confidence:
+          type: string
+          enum: [high, medium, low]
+        evidence:
+          type: object
+        status:
+          type: string
+          enum: [pending, accepted, modified, rejected, deferred]
+        reviewed_by:
+          type: string
+          format: uuid
+        reviewed_at:
+          type: string
+          format: date-time
+        feedback:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        expires_at:
+          type: string
+          format: date-time
+
+paths:
+  # Authentication
+  /auth/login:
+    post:
+      tags: [Authentication]
+      summary: User login
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  format: password
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                  user:
+                    $ref: '#/components/schemas/User'
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/logout:
+    post:
+      tags: [Authentication]
+      summary: User logout
+      responses:
+        '200':
+          description: Logout successful
+
+  /auth/me:
+    get:
+      tags: [Authentication]
+      summary: Get current user
+      responses:
+        '200':
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+
+  # Projects
+  /projects:
+    get:
+      tags: [Projects]
+      summary: List projects
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [active, archived]
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+            maximum: 100
+      responses:
+        '200':
+          description: List of projects
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Project'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+
+    post:
+      tags: [Projects]
+      summary: Create project
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateProjectRequest'
+      responses:
+        '201':
+          description: Project created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /projects/{projectId}:
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+
+    get:
+      tags: [Projects]
+      summary: Get project by ID
+      responses:
+        '200':
+          description: Project details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project'
+        '404':
+          description: Project not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    put:
+      tags: [Projects]
+      summary: Update project
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateProjectRequest'
+      responses:
+        '200':
+          description: Project updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project'
+
+    delete:
+      tags: [Projects]
+      summary: Delete project
+      responses:
+        '204':
+          description: Project deleted
+
+  # Tasks
+  /projects/{projectId}/tasks:
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+
+    get:
+      tags: [Tasks]
+      summary: List tasks
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [todo, in_progress, review, done]
+        - name: owner_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: parent_task_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+      responses:
+        '200':
+          description: List of tasks
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Task'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+
+    post:
+      tags: [Tasks]
+      summary: Create task
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTaskRequest'
+      responses:
+        '201':
+          description: Task created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /tasks/{taskId}:
+    parameters:
+      - name: taskId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+
+    get:
+      tags: [Tasks]
+      summary: Get task by ID
+      responses:
+        '200':
+          description: Task details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+        '404':
+          description: Task not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    put:
+      tags: [Tasks]
+      summary: Update task
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateTaskRequest'
+      responses:
+        '200':
+          description: Task updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+
+    delete:
+      tags: [Tasks]
+      summary: Delete task
+      responses:
+        '204':
+          description: Task deleted
+
+  /tasks/{taskId}/latest-position:
+    parameters:
+      - name: taskId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+
+    post:
+      tags: [Tasks]
+      summary: Add latest position update
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddLatestPositionRequest'
+      responses:
+        '200':
+          description: Latest position added
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+
+  /tasks/{taskId}/dependencies:
+    parameters:
+      - name: taskId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+
+    get:
+      tags: [Tasks]
+      summary: Get task dependencies
+      responses:
+        '200':
+          description: Task dependencies
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  predecessors:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        task_id:
+                          type: string
+                          format: uuid
+                        dependency_type:
+                          type: string
+                        lag_days:
+                          type: integer
+                  successors:
+                    type: array
+                    items:
+                      type: object
+
+    post:
+      tags: [Tasks]
+      summary: Add task dependency
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - predecessor_task_id
+              properties:
+                predecessor_task_id:
+                  type: string
+                  format: uuid
+                dependency_type:
+                  type: string
+                  enum: [finish_to_start, start_to_start, finish_to_finish, start_to_finish]
+                  default: finish_to_start
+                lag_days:
+                  type: integer
+                  default: 0
+      responses:
+        '201':
+          description: Dependency added
+
+  # Risks
+  /projects/{projectId}/risks:
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+
+    get:
+      tags: [Risks]
+      summary: List risks
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [active, mitigated, materialized, closed]
+        - name: probability
+          in: query
+          schema:
+            type: string
+            enum: [low, medium, high]
+        - name: impact
+          in: query
+          schema:
+            type: string
+            enum: [minor, moderate, severe, critical]
+      responses:
+        '200':
+          description: List of risks
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Risk'
+
+    post:
+      tags: [Risks]
+      summary: Create risk
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateRiskRequest'
+      responses:
+        '201':
+          description: Risk created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Risk'
+
+  # Proposals
+  /projects/{projectId}/proposals:
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+
+    get:
+      tags: [Proposals]
+      summary: List proposals
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, accepted, modified, rejected, deferred]
+          default: pending
+        - name: component_type
+          in: query
+          schema:
+            type: string
+        - name: confidence
+          in: query
+          schema:
+            type: string
+            enum: [high, medium, low]
+      responses:
+        '200':
+          description: List of proposals
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Proposal'
+
+  /proposals/{proposalId}/accept:
+    parameters:
+      - name: proposalId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+
+    post:
+      tags: [Proposals]
+      summary: Accept proposal
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                modifications:
+                  type: object
+                  description: "Optional modifications to proposal before accepting"
+      responses:
+        '200':
+          description: Proposal accepted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  proposal:
+                    $ref: '#/components/schemas/Proposal'
+                  applied_changes:
+                    type: object
+
+  /proposals/{proposalId}/reject:
+    parameters:
+      - name: proposalId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+
+    post:
+      tags: [Proposals]
+      summary: Reject proposal
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                feedback:
+                  type: string
+                  description: "Optional reason for rejection"
+      responses:
+        '200':
+          description: Proposal rejected
+
+  # AI Operations
+  /ai/validate:
+    post:
+      tags: [AI]
+      summary: Validate component with AI
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - project_id
+                - component_type
+                - data
+              properties:
+                project_id:
+                  type: string
+                  format: uuid
+                component_type:
+                  type: string
+                component_id:
+                  type: string
+                  format: uuid
+                data:
+                  type: object
+      responses:
+        '200':
+          description: Validation result with proposals
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  valid:
+                    type: boolean
+                  issues:
+                    type: array
+                    items:
+                      type: object
+                  proposals:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Proposal'
+
+  /projects/{projectId}/ai/daily-analysis:
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+
+    post:
+      tags: [AI]
+      summary: Trigger daily AI analysis
+      responses:
+        '202':
+          description: Analysis started
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  job_id:
+                    type: string
+                  status:
+                    type: string
+
+  /projects/{projectId}/ai/usage:
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+
+    get:
+      tags: [AI]
+      summary: Get AI usage and costs
+      parameters:
+        - name: start_date
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: end_date
+          in: query
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: AI usage summary
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total_cost:
+                    type: number
+                  total_tokens:
+                    type: integer
+                  operations:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        operation_type:
+                          type: string
+                        count:
+                          type: integer
+                        total_cost:
+                          type: number
+
+  # Comments
+  /components/{componentType}/{componentId}/comments:
+    parameters:
+      - name: componentType
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: componentId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+
+    get:
+      tags: [Comments]
+      summary: Get comments for component
+      responses:
+        '200':
+          description: List of comments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+
+    post:
+      tags: [Comments]
+      summary: Add comment to component
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - content
+              properties:
+                content:
+                  type: string
+                comment_type:
+                  type: string
+                  enum: [status_update, question, answer, note, decision]
+                mentioned_user_ids:
+                  type: array
+                  items:
+                    type: string
+                    format: uuid
+      responses:
+        '201':
+          description: Comment created
+
+  # Reports
+  /projects/{projectId}/reports/generate:
+    parameters:
+      - name: projectId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+
+    post:
+      tags: [Reports]
+      summary: Generate project report
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - report_type
+              properties:
+                report_type:
+                  type: string
+                  enum: [executive_summary, status_report, risk_assessment, stakeholder_update]
+                format:
+                  type: string
+                  enum: [pdf, markdown, html]
+                  default: pdf
+                sections:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        '202':
+          description: Report generation started
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  job_id:
+                    type: string
+                  status:
+                    type: string
