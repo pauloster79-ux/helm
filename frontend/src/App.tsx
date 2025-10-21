@@ -11,7 +11,6 @@ import AssistantSettingsPage from '@/pages/AssistantSettingsPage'
 import QuickDiagnostic from '@/pages/QuickDiagnostic'
 import NotFound from '@/pages/NotFound'
 import ProtectedRoute from '@/components/common/ProtectedRoute'
-import AuthDebug from '@/components/debug/AuthDebug'
 
 function App() {
   return (

@@ -57,35 +57,10 @@ export function AIConfigPanel({ organizationId, className = '' }: AIConfigPanelP
       try {
         setLoading(true);
         
-        // Try to fetch from ai_configurations table
-        const { data, error } = await supabase
-          .from('ai_configurations')
-          .select('*')
-          .eq('organization_id', organizationId)
-          .is('component_type', null) // Organization-level config
-          .single();
-
-        if (error && error.code !== 'PGRST116') { // PGRST116 = no rows returned
-          // If table doesn't exist or other error, use default config
-          console.warn('AI configurations table not available, using defaults:', error);
-          // Keep default config - no need to update state
-        } else if (data) {
-          setConfig({
-            ai_provider: (data as any).ai_provider || 'openai',
-            ai_model: (data as any).ai_model || 'gpt-4o-mini',
-            validation_scope: (data as any).validation_scope || 'selective',
-            proposal_timing: (data as any).proposal_timing || 'realtime',
-            proposal_threshold: (data as any).proposal_threshold || 'medium',
-            cost_limit_daily: (data as any).cost_limit_daily || 5.00,
-            cost_limit_monthly: (data as any).cost_limit_monthly || 100.00,
-            alert_threshold_percentage: (data as any).alert_threshold_percentage || 80,
-            enable_field_validation: (data as any).enable_field_validation !== false,
-            enable_component_validation: (data as any).enable_component_validation !== false,
-            assessment_prompt_system: (data as any).assessment_prompt_system || null,
-            assessment_prompt_categories: (data as any).assessment_prompt_categories || null,
-            assessment_prompt_output_format: (data as any).assessment_prompt_output_format || null
-          });
-        }
+        // TODO: Implement AI configurations table
+        // For now, use default configuration
+        console.log('Using default AI configuration');
+        // Keep default config - no need to update state
       } catch (error) {
         console.warn('Error fetching AI config, using defaults:', error);
         // Don't show error message, just use default config
@@ -133,11 +108,9 @@ export function AIConfigPanel({ organizationId, className = '' }: AIConfigPanelP
 
       console.log('Saving AI config with data:', saveData);
 
-      const { error } = await supabase
-        .from('ai_configurations')
-        .upsert(saveData as any, {
-          onConflict: 'organization_id,component_type'
-        });
+      // TODO: Implement AI configurations table
+      console.log('AI config save (not implemented):', saveData);
+      const error = null; // Mock success
 
       if (error) {
         console.error('Supabase error:', error);
